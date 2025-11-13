@@ -20,17 +20,19 @@ echo "Enter your work calendar name (e.g., work@company.com) or press Enter to s
 read -r CALENDAR_NAME
 
 if [ -n "$CALENDAR_NAME" ]; then
-    CRON_LINE="*/30 9-17 * * 1-5 PATH=$CURRENT_PATH WORK_CALENDAR=\"$CALENDAR_NAME\" $NAG_SCRIPT"
+    CRON_LINE1="0,30 9-15 * * 1-5 PATH=$CURRENT_PATH WORK_CALENDAR=\"$CALENDAR_NAME\" $NAG_SCRIPT"
+    CRON_LINE2="0,30 16 * * 1-5 PATH=$CURRENT_PATH WORK_CALENDAR=\"$CALENDAR_NAME\" $NAG_SCRIPT"
 else
-    CRON_LINE="*/30 9-17 * * 1-5 PATH=$CURRENT_PATH $NAG_SCRIPT"
+    CRON_LINE1="0,30 9-15 * * 1-5 PATH=$CURRENT_PATH $NAG_SCRIPT"
+    CRON_LINE2="0,30 16 * * 1-5 PATH=$CURRENT_PATH $NAG_SCRIPT"
 fi
 
 if crontab -l 2>/dev/null | grep -q "omnifocus-nag.sh"; then
-    crontab -l 2>/dev/null | grep -v "omnifocus-nag.sh" | { cat; echo "$CRON_LINE"; } | crontab -
+    crontab -l 2>/dev/null | grep -v "omnifocus-nag.sh" | { cat; echo "$CRON_LINE1"; echo "$CRON_LINE2"; } | crontab -
 else
-    (crontab -l 2>/dev/null; echo "$CRON_LINE") | crontab -
+    (crontab -l 2>/dev/null; echo "$CRON_LINE1"; echo "$CRON_LINE2") | crontab -
 fi
 
-echo "Cron job installed: Every 30 min, 9am-5pm, Mon-Fri"
+echo "Cron job installed: Every 30 min, 9am-4:30pm, Mon-Fri"
 echo "Test: $NAG_SCRIPT"
 echo "Logs: tail -f $SCRIPT_DIR/taskmaster.log"

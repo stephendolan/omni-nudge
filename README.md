@@ -2,7 +2,7 @@
 
 OmniFocus task accountability system that uses Claude Code to nag you about stale tasks via system notifications and text-to-speech.
 
-Runs via cron every 30 minutes during work hours. Optionally skips nagging if you're in a meeting (checks your work calendar). Uses Memory MCP to track task history and escalate urgency.
+Runs via cron every 30 minutes during work hours (9am-4:30pm). Optionally skips nagging if you're in a meeting (checks your work calendar). Uses Memory MCP to track task history and escalate urgency.
 
 ## Setup
 
