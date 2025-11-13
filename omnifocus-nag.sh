@@ -23,6 +23,35 @@ fi
 
 cd "$SCRIPT_DIR"
 
+log "Checking for active meetings..."
+MEETING_STATUS=$(osascript -e 'tell application "Calendar"
+    set now to current date
+    set endTime to now + (5 * minutes)
+    try
+        set workCalendar to first calendar whose name is "stephen@tuple.app"
+        set theEvents to (every event of workCalendar whose start date ≤ endTime and end date ≥ now)
+        if (count of theEvents) > 0 then
+            repeat with evt in theEvents
+                set eventTitle to summary of evt
+                set eventEnd to end date of evt
+                set minutesLeft to round ((eventEnd - now) / 60)
+                return "IN_MEETING:" & eventTitle & ":" & minutesLeft
+            end repeat
+        end if
+    end try
+    return "NO_MEETING"
+end tell' 2>&1)
+
+if [[ "$MEETING_STATUS" == IN_MEETING:* ]]; then
+    MEETING_INFO="${MEETING_STATUS#IN_MEETING:}"
+    MEETING_NAME="${MEETING_INFO%:*}"
+    MINUTES_LEFT="${MEETING_INFO##*:}"
+    log "In meeting: '$MEETING_NAME' ($MINUTES_LEFT minutes remaining) - skipping nag"
+    exit 0
+fi
+
+log "No active meetings, proceeding with task check..."
+
 log "Verifying MCP configuration..."
 if ! claude mcp list 2>&1 | grep -q "memory.*Connected"; then
     log "WARNING: Memory MCP server not connected. Run 'claude mcp add --transport stdio memory -- npx -y @modelcontextprotocol/server-memory' in $SCRIPT_DIR"

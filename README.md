@@ -2,7 +2,7 @@
 
 OmniFocus task accountability system that uses Claude Code to nag you about stale tasks via system notifications and text-to-speech.
 
-Runs via cron every 30 minutes during work hours. Uses Memory MCP to track task history and escalate urgency.
+Runs via cron every 30 minutes during work hours. Automatically skips nagging if you're in a meeting (checks stephen@tuple.app calendar). Uses Memory MCP to track task history and escalate urgency.
 
 ## Setup
 
@@ -31,6 +31,7 @@ cd ~/Repos/taskmaster
 
 **Change work hours**: Edit `install-cron.sh` cron schedule
 **Adjust nag behavior**: Edit the prompt in `omnifocus-nag.sh`
+**Change meeting calendar**: Edit the calendar name in line 31 of `omnifocus-nag.sh` (currently `stephen@tuple.app`)
 **View logs**: `tail -f taskmaster.log`
 
 ## Troubleshooting
