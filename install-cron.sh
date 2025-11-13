@@ -12,7 +12,15 @@ fi
 
 [ ! -x "$NAG_SCRIPT" ] && chmod +x "$NAG_SCRIPT"
 
-CRON_LINE="*/30 9-17 * * 1-5 $NAG_SCRIPT"
+# Prompt for work calendar name
+echo "Enter your work calendar name (e.g., work@company.com) or press Enter to skip meeting detection:"
+read -r CALENDAR_NAME
+
+if [ -n "$CALENDAR_NAME" ]; then
+    CRON_LINE="*/30 9-17 * * 1-5 /usr/bin/env WORK_CALENDAR=\"$CALENDAR_NAME\" $NAG_SCRIPT"
+else
+    CRON_LINE="*/30 9-17 * * 1-5 $NAG_SCRIPT"
+fi
 
 if crontab -l 2>/dev/null | grep -q "omnifocus-nag.sh"; then
     crontab -l 2>/dev/null | grep -v "omnifocus-nag.sh" | { cat; echo "$CRON_LINE"; } | crontab -

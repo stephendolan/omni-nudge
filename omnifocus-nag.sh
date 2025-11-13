@@ -23,13 +23,16 @@ fi
 
 cd "$SCRIPT_DIR"
 
+WORK_CALENDAR="${WORK_CALENDAR:-}"
+
 log "Checking for active meetings..."
-MEETING_STATUS=$(osascript -e 'tell application "Calendar"
-    set now to current date
-    set endTime to now + (5 * minutes)
-    try
-        set workCalendar to first calendar whose name is "stephen@tuple.app"
-        set theEvents to (every event of workCalendar whose start date ≤ endTime and end date ≥ now)
+if [ -n "$WORK_CALENDAR" ]; then
+    MEETING_STATUS=$(osascript -e "tell application \"Calendar\"
+        set now to current date
+        set endTime to now + (5 * minutes)
+        try
+            set workCalendar to first calendar whose name is \"$WORK_CALENDAR\"
+            set theEvents to (every event of workCalendar whose start date ≤ endTime and end date ≥ now)
         if (count of theEvents) > 0 then
             repeat with evt in theEvents
                 set eventTitle to summary of evt
@@ -39,8 +42,12 @@ MEETING_STATUS=$(osascript -e 'tell application "Calendar"
             end repeat
         end if
     end try
-    return "NO_MEETING"
-end tell' 2>&1)
+    return \"NO_MEETING\"
+end tell" 2>&1)
+else
+    MEETING_STATUS="NO_MEETING"
+    log "WORK_CALENDAR not set - skipping meeting detection"
+fi
 
 if [[ "$MEETING_STATUS" == IN_MEETING:* ]]; then
     MEETING_INFO="${MEETING_STATUS#IN_MEETING:}"
