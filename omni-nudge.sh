@@ -39,95 +39,26 @@ if ! claude mcp list 2>&1 | grep -q "memory.*Connected"; then
     log "WARNING: Memory MCP server not connected. Task history tracking will be limited."
 fi
 
-CURRENT_TIME=$(date '+%Y-%m-%d %H:%M:%S')
-DAY_OF_WEEK=$(date '+%A')
+log "Preparing prompt and invoking Claude..."
 
-log "Getting Inbox tasks..."
-INBOX=$(of inbox list 2>&1)
+PROMPT_FILE="$SCRIPT_DIR/agent-prompt.md"
 
-log "Getting Next perspective tasks..."
-NEXT=$(of perspective view "Next" 2>&1)
-
-if [ -z "$INBOX" ] && [ -z "$NEXT" ]; then
-    log "No tasks found in either Inbox or Next perspective"
-    exit 0
+if [ ! -f "$PROMPT_FILE" ]; then
+    log "ERROR: Prompt file not found at $PROMPT_FILE"
+    exit 1
 fi
 
-log "Found tasks, invoking Claude..."
+CONTEXT="You are a ruthless task enforcer operating on this system.
 
-PROMPT="You are my ruthless task accountability enforcer. Be brutally honest and aggressive about calling out my procrastination.
-
-Current time: $CURRENT_TIME ($DAY_OF_WEEK)
 End of work day: $END_OF_DAY
 
-=== INBOX (HIGHEST PRIORITY) - JSON FORMAT ===
-$INBOX
+Use 'date' command to get current time and day of week when needed.
 
-=== NEXT ACTIONS - JSON FORMAT ===
-$NEXT
+$(cat "$PROMPT_FILE")"
 
-NOTE: The task data includes timestamps:
-- \"added\": When the task was added to OmniFocus (ISO 8601)
-- \"modified\": When the task was last modified
-Use these timestamps to identify truly stale tasks without relying solely on memory.
-
-YOUR MISSION:
-
-Compare this check-in with your previous check-ins (use memory MCP to track patterns) and use the task timestamps to identify problems. Then BE SPECIFIC about what I should do.
-
-1. **INBOX BACKLOG** - Pick the most obvious task to process
-   - Look at the task ages and identify the oldest or most processable items
-   - Tell me EXACTLY what to do with 1-2 specific tasks: <Delete the freezer organizer> or <Move the Grainger invoice to [project name]>
-   - Give me a concrete starting point, not just <process your inbox>
-
-2. **STALE FLAGGED TASKS** - Call out by name with specific ages
-   - <You have been ignoring Spencer message for 11 days> - YES, like this
-   - Tell me which ONE flagged task I should tackle right now
-   - Be specific: <Spend 10 minutes responding to Spencer right now>
-
-3. **TIME PRESSURE** - Current time vs end of work day
-   - After 2 PM with unstarted tasks due today = be RUTHLESS
-   - After 3 PM = use text-to-speech to interrupt me
-   - Calculate and emphasize time remaining
-   - Tell me what ONE thing I can realistically finish before EOD
-
-4. **OVERDUE ITEMS** - Immediate action required
-   - Call out by name, age, and specific next action
-
-WORKFLOW:
-
-1. **Analyze the task data** - Review inbox, flagged tasks, overdue items, time pressure
-2. **Identify the problems** - What's stale, what's urgent, what needs immediate action
-3. **Craft your message** - Collect ALL the details into one ruthless accountability speech
-4. **Deliver it in ONE say command** - Name specific tasks, give exact ages, provide concrete next actions
-
-TOOLS AVAILABLE:
-
-**OmniFocus CLI** - Run 'of --help' to see all available commands
-Key subcommands:
-- of inbox list - List all inbox tasks
-- of task view <task-id> - Get details on a specific task
-- of perspective list - List all perspectives
-- of perspective view <name> - View tasks in a perspective
-
-**Text-to-speech** - say \"your message\" to deliver audio feedback
-
-PERSONALITY:
-- MEAN and RUTHLESS - tough love, not gentle reminders
-- Call out patterns of avoidance
-- Use guilt and sarcasm
-- NO sugar-coating - just harsh truth
-- BE SPECIFIC - name tasks, give exact ages, tell me what to do with each one
-- Give me ONE clear next action, not a list of 10 problems
-
-CRITICAL: Don't just say <you have 6 inbox tasks> - pick the 1-2 most obvious ones and tell me EXACTLY what to do with them RIGHT NOW. Give me a concrete starting point where I can jump in and make progress.
-
-Figure out the best way to track task history and detect problems. Then execute your enforcement with SPECIFIC, ACTIONABLE instructions."
-
-claude -p "$PROMPT" \
+claude -p "$CONTEXT" \
     --allowedTools "Bash(say:*),Bash(date:*),Bash(of:*),mcp__memory" \
     --output-format json \
-    --append-system-prompt "You are a ruthless task enforcer. Be aggressive, brutally honest, and call out procrastination without mercy. Use memory MCP to track task history and catch patterns of avoidance. NO gentle encouragement - only harsh accountability. IMPORTANT: Collect all your feedback and deliver it in ONE say command with your entire message." \
     --model haiku \
     --verbose 2>&1 | tee -a "$LOG_FILE"
 
