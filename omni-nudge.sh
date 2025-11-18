@@ -57,7 +57,7 @@ Use 'date' command to get current time and day of week when needed.
 $(cat "$PROMPT_FILE")"
 
 claude -p "$CONTEXT" \
-    --allowedTools "Bash(say:*),Bash(date:*),Bash(of:*),mcp__memory" \
+    --allowedTools "Bash(say:*),Bash(date:*),Bash(of:*),Bash(terminal-notifier:*),mcp__memory" \
     --output-format json \
     --model haiku \
     --verbose 2>&1 | tee -a "$LOG_FILE"
