@@ -41,8 +41,8 @@ fi
 
 log "Fetching OmniFocus data..."
 
-INBOX_JSON=$(of inbox list 2>/dev/null | grep -v "^- Loading" || echo "[]")
-NEXT_JSON=$(of perspective view "Next" 2>/dev/null | grep -v "^- Loading" || echo "[]")
+INBOX_JSON=$(of inbox list 2>/dev/null | grep -v "^- Loading" | jq '[.[] | select(.completed != true)]' || echo "[]")
+NEXT_JSON=$(of perspective view "Next" 2>/dev/null | grep -v "^- Loading" | jq '[.[] | select(.completed != true)]' || echo "[]")
 
 TASK_SNAPSHOT=$(cat <<EOF
 {
