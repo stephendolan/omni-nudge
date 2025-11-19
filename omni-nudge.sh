@@ -39,20 +39,39 @@ if ! claude mcp list 2>&1 | grep -q "memory.*Connected"; then
     log "WARNING: Memory MCP server not connected. Task history tracking will be limited."
 fi
 
-log "Preparing prompt and invoking Claude..."
+log "Fetching OmniFocus data..."
+
+INBOX_JSON=$(of inbox list 2>/dev/null | grep -v "^- Loading" || echo "[]")
+NEXT_JSON=$(of perspective view "Next" 2>/dev/null | grep -v "^- Loading" || echo "[]")
+
+TASK_SNAPSHOT=$(cat <<EOF
+{
+  "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+  "current_time": "$(date "+%Y-%m-%d %H:%M:%S %Z")",
+  "end_of_day": "$END_OF_DAY",
+  "inbox": $INBOX_JSON,
+  "next_actions": $NEXT_JSON
+}
+EOF
+)
 
 PROMPT_FILE="$SCRIPT_DIR/agent-prompt.md"
-
 if [ ! -f "$PROMPT_FILE" ]; then
     log "ERROR: Prompt file not found at $PROMPT_FILE"
     exit 1
 fi
 
+log "Invoking Claude..."
+
 CONTEXT="You are a ruthless task enforcer operating on this system.
 
-End of work day: $END_OF_DAY
+## CURRENT OMNIFOCUS SNAPSHOT
 
-Use 'date' command to get current time and day of week when needed.
+\`\`\`json
+$TASK_SNAPSHOT
+\`\`\`
+
+## YOUR INSTRUCTIONS
 
 $(cat "$PROMPT_FILE")"
 
