@@ -23,6 +23,11 @@ if ! command -v claude &> /dev/null; then
     exit 1
 fi
 
+if ! command -v jq &> /dev/null; then
+    log "ERROR: 'jq' command not found. Install jq for JSON filtering."
+    exit 1
+fi
+
 cd "$SCRIPT_DIR"
 
 if [[ "$SKIP_CONFIRMATION" != "true" ]]; then
@@ -41,8 +46,25 @@ fi
 
 log "Fetching OmniFocus data..."
 
-INBOX_JSON=$(of inbox list 2>/dev/null | grep -v "^- Loading" | jq '[.[] | select(.completed != true)]' || echo "[]")
-NEXT_JSON=$(of perspective view "Next" 2>/dev/null | grep -v "^- Loading" | jq '[.[] | select(.completed != true)]' || echo "[]")
+INBOX_RAW=$(of inbox list 2>/dev/null | grep -v "^- Loading")
+if [ -n "$INBOX_RAW" ]; then
+    INBOX_JSON=$(echo "$INBOX_RAW" | jq '[.[] | select(.completed != true)]') || {
+        log "ERROR: Failed to filter inbox JSON"
+        exit 1
+    }
+else
+    INBOX_JSON="[]"
+fi
+
+NEXT_RAW=$(of perspective view "Next" 2>/dev/null | grep -v "^- Loading")
+if [ -n "$NEXT_RAW" ]; then
+    NEXT_JSON=$(echo "$NEXT_RAW" | jq '[.[] | select(.completed != true)]') || {
+        log "ERROR: Failed to filter next actions JSON"
+        exit 1
+    }
+else
+    NEXT_JSON="[]"
+fi
 
 TASK_SNAPSHOT=$(cat <<EOF
 {
