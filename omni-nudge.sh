@@ -66,11 +66,30 @@ else
     NEXT_JSON="[]"
 fi
 
+DAY_OF_WEEK=$(date "+%A")
+DAY_NUMBER=$(date "+%u")
+IS_WEEKEND=$([[ "$DAY_NUMBER" -ge 6 ]] && echo "true" || echo "false")
+
+CURRENT_TIME=$(date "+%H:%M")
+if [[ "$IS_WEEKEND" == "true" ]]; then
+    WORK_HOURS_REMAINING=0
+else
+    CURRENT_MINUTES=$((10#$(date "+%H") * 60 + 10#$(date "+%M")))
+    EOD_HOUR=$(echo "$END_OF_DAY" | cut -d: -f1)
+    EOD_MINUTE=$(echo "$END_OF_DAY" | cut -d: -f2)
+    EOD_MINUTES=$((10#$EOD_HOUR * 60 + 10#$EOD_MINUTE))
+    REMAINING_MINUTES=$((EOD_MINUTES - CURRENT_MINUTES))
+    WORK_HOURS_REMAINING=$(awk "BEGIN {printf \"%.1f\", $REMAINING_MINUTES / 60}")
+fi
+
 TASK_SNAPSHOT=$(cat <<EOF
 {
   "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
   "current_time": "$(date "+%Y-%m-%d %H:%M:%S %Z")",
   "end_of_day": "$END_OF_DAY",
+  "day_of_week": "$DAY_OF_WEEK",
+  "is_weekend": $IS_WEEKEND,
+  "work_hours_remaining": $WORK_HOURS_REMAINING,
   "inbox": $INBOX_JSON,
   "next_actions": $NEXT_JSON
 }
