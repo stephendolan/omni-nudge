@@ -52,26 +52,49 @@ search_nodes({entityType: "task", query: "lifecycle_state: active"})
 - `first_seen`: When first observed
 - `last_seen`: Previous check-in
 
-### STEP 1.5: DETECT COMPLETED TASKS (CRITICAL)
+### STEP 1.5: DETECT COMPLETED AND DISAPPEARED TASKS (CRITICAL)
 
-**Verify completion before nagging:**
+**For each task entity in memory with `lifecycle_state: active`:**
 
-1. Look up each memory task ID in current snapshot (inbox + next_actions)
-2. **In snapshot:** Check `completed` field (true = done, false = incomplete)
-3. **Missing from snapshot:** Run `of task view <task-id>` to verify completion
-4. **Completed tasks:**
-   - Note completion date in memory
-   - Add praise for repeat offenders (3+ sightings)
-   - **DO NOT NAG**
+1. **Look up in current snapshot** (inbox + next_actions arrays by omnifocus_id)
 
-Without verification, you'll nag about completed tasks, destroying trust.
+2. **If FOUND in snapshot:**
+   - Task is still active, continue to STEP 2 for updates
 
-Example:
-```bash
-of task view gk4SkKANLnQ
-# Shows: "completed": true, "completionDate": "2025-11-19T16:34:05.000Z"
-# Memory: "Spencer Q3 (gk4SkKANLnQ) COMPLETED Nov 19 after 8 days"
-```
+3. **If NOT FOUND in snapshot:**
+   - Run `of task view <omnifocus_id>` to check status
+
+4. **If completed:**
+   ```javascript
+   add_observations({
+     observations: [{
+       entityName: "<task name>",
+       contents: [
+         "lifecycle_state: completed",
+         "completed_at: <timestamp from completionDate>",
+         "last_seen: <now>"
+       ]
+     }]
+   })
+   ```
+   - Add praise if `appearance_count >= 3`: "Finally completed after N check-ins"
+   - **DO NOT NAG** - skip this task in enforcement
+
+5. **If NOT completed (disappeared):**
+   ```javascript
+   add_observations({
+     observations: [{
+       entityName: "<task name>",
+       contents: [
+         "lifecycle_state: disappeared",
+         "disappeared_at: <now>",
+         "note: Task removed from OmniFocus without completion"
+       ]
+     }]
+   })
+   ```
+
+Without this verification, you'll nag about completed tasks, destroying trust.
 
 ### STEP 2: UPDATE TASK ENTITIES
 
@@ -164,6 +187,28 @@ create_relations({
 **Person extraction:**
 - Look for names in task name/notes
 - Classify role: founder, team, vendor, customer
+
+### STEP 2.5: CLEANUP OLD ENTITIES
+
+**After updating all tasks, clean up stale entities:**
+
+1. **Completed tasks older than 30 days:**
+   ```javascript
+   // Find tasks with lifecycle_state: completed AND completed_at > 30 days ago
+   delete_entities(["<task name>"])
+   ```
+
+2. **Disappeared tasks older than 7 days:**
+   ```javascript
+   // Find tasks with lifecycle_state: disappeared AND disappeared_at > 7 days ago
+   delete_entities(["<task name>"])
+   ```
+
+3. **Keep CheckIn entities:**
+   - Retain last 100 check-ins
+   - Delete older check-ins to prevent memory bloat
+
+**Why cleanup matters:** Prevents memory graph from growing unbounded. Completed tasks are kept for 30 days for pattern analysis, then removed.
 
 ### STEP 3: ESCALATE FOR REPEAT OFFENDERS
 
