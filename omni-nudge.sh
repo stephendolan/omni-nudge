@@ -48,7 +48,7 @@ log "Fetching OmniFocus data..."
 
 INBOX_RAW=$(of inbox list 2>/dev/null | grep -v "^- Loading")
 if [ -n "$INBOX_RAW" ]; then
-    INBOX_JSON=$(echo "$INBOX_RAW" | jq '[.[] | select(.completed != true)]') || {
+    INBOX_JSON=$(echo "$INBOX_RAW" | jq '[.[] | select(.completed | not)]') || {
         log "ERROR: Failed to filter inbox JSON"
         exit 1
     }
@@ -58,7 +58,7 @@ fi
 
 NEXT_RAW=$(of perspective view "Next" 2>/dev/null | grep -v "^- Loading")
 if [ -n "$NEXT_RAW" ]; then
-    NEXT_JSON=$(echo "$NEXT_RAW" | jq '[.[] | select(.completed != true)]') || {
+    NEXT_JSON=$(echo "$NEXT_RAW" | jq '[.[] | select(.completed | not)]') || {
         log "ERROR: Failed to filter next actions JSON"
         exit 1
     }
