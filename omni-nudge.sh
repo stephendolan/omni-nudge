@@ -7,6 +7,12 @@ LOG_FILE="${OMNI_NUDGE_LOG_FILE:-$SCRIPT_DIR/omni-nudge.log}"
 END_OF_DAY="${OMNI_NUDGE_END_OF_DAY:-16:30}"
 SKIP_CONFIRMATION="${OMNI_NUDGE_SKIP_CONFIRMATION:-false}"
 
+# Validate END_OF_DAY format (HH:MM, 00:00-23:59)
+if ! [[ "$END_OF_DAY" =~ ^([01][0-9]|2[0-3]):[0-5][0-9]$ ]]; then
+    echo "ERROR: Invalid END_OF_DAY format '$END_OF_DAY'. Expected HH:MM (00:00-23:59)" >&2
+    exit 1
+fi
+
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG_FILE"
 }
@@ -28,7 +34,12 @@ if ! command -v jq &> /dev/null; then
     exit 1
 fi
 
+if ! command -v terminal-notifier &> /dev/null; then
+    log "WARNING: 'terminal-notifier' not found. Notifications will not work."
+fi
+
 cd "$SCRIPT_DIR"
+export PATH="$SCRIPT_DIR/bin:$PATH"
 
 if [[ "$SKIP_CONFIRMATION" != "true" ]]; then
     USER_RESPONSE=$(osascript -e 'button returned of (display dialog "Time for your productivity check-in. Run audit now?" buttons {"Skip", "Run Audit"} default button "Run Audit" giving up after 10)' 2>/dev/null || echo "Skip")
@@ -79,7 +90,11 @@ else
     EOD_MINUTE=$(echo "$END_OF_DAY" | cut -d: -f2)
     EOD_MINUTES=$((10#$EOD_HOUR * 60 + 10#$EOD_MINUTE))
     REMAINING_MINUTES=$((EOD_MINUTES - CURRENT_MINUTES))
-    WORK_HOURS_REMAINING=$(awk "BEGIN {printf \"%.1f\", $REMAINING_MINUTES / 60}")
+    if [ $REMAINING_MINUTES -lt 0 ]; then
+        WORK_HOURS_REMAINING=0
+    else
+        WORK_HOURS_REMAINING=$(awk "BEGIN {printf \"%.1f\", $REMAINING_MINUTES / 60}")
+    fi
 fi
 
 TASK_SNAPSHOT=$(cat <<EOF
@@ -116,11 +131,12 @@ $TASK_SNAPSHOT
 
 $(cat "$PROMPT_FILE")"
 
+STDERR_FILE="$SCRIPT_DIR/omni-nudge.error.log"
 claude -p "$CONTEXT" \
-    --allowedTools "Bash(say:*),Bash(date:*),Bash(of:*),Bash(terminal-notifier:*),mcp__memory" \
+    --allowedTools "Bash(say-logged:*),Bash(date:*),Bash(of:*),Bash(terminal-notifier:*),mcp__memory" \
     --output-format json \
-    --model haiku \
-    --verbose 2>&1 | tee -a "$LOG_FILE"
+    --model opus \
+    --verbose 2> >(tee -a "$STDERR_FILE" >&2) | tee -a "$LOG_FILE"
 
 RESULT=$?
 
@@ -128,6 +144,13 @@ if [ $RESULT -eq 0 ]; then
     log "Task check completed successfully"
 else
     log "ERROR: Task check failed with exit code $RESULT"
+    if grep -qi "rate.limit\|quota\|429" "$STDERR_FILE" 2>/dev/null; then
+        log "DIAGNOSTIC: Rate limit detected - try again later"
+    elif grep -qi "mcp\|memory.*failed\|memory.*error" "$STDERR_FILE" 2>/dev/null; then
+        log "DIAGNOSTIC: MCP connection issue - check memory server"
+    elif grep -qi "timeout\|timed out" "$STDERR_FILE" 2>/dev/null; then
+        log "DIAGNOSTIC: Request timeout - network or API issue"
+    fi
 fi
 
 exit $RESULT

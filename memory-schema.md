@@ -30,15 +30,15 @@ due_date: <ISO timestamp?>
 completed_at: <ISO timestamp?>
 ```
 
-**Naming convention:** Use task name from OmniFocus (e.g., "Spencer Q3 Response")
+**Naming convention:** Use omnifocus_id as the entity name (e.g., "gk4SkKANLnQ"). Store display_name in observations for human readability. This ensures entity stability when tasks are renamed.
 
 **Example:**
 ```json
 {
-  "name": "Spencer Q3 Response",
+  "name": "gk4SkKANLnQ",
   "entityType": "task",
   "observations": [
-    "omnifocus_id: gk4SkKANLnQ",
+    "display_name: Spencer Q3 Response",
     "lifecycle_state: active",
     "first_seen: 2025-11-14T14:35:00Z",
     "last_seen: 2025-11-19T13:00:00Z",
@@ -312,10 +312,10 @@ create_entities({
 // 2. Create/update Task entity
 create_entities({
   entities: [{
-    name: "Spencer Q3 Response",
+    name: "gk4SkKANLnQ",
     entityType: "task",
     observations: [
-      "omnifocus_id: gk4SkKANLnQ",
+      "display_name: Spencer Q3 Response",
       "lifecycle_state: active",
       "appearance_count: 8",
       "escalation_level: 3",
@@ -329,17 +329,17 @@ create_entities({
 create_relations({
   relations: [
     {
-      from: "Spencer Q3 Response",
+      from: "gk4SkKANLnQ",
       to: "Founder Relations",
       relationType: "BELONGS_TO"
     },
     {
-      from: "Spencer Q3 Response",
+      from: "gk4SkKANLnQ",
       to: "Spencer",
       relationType: "MENTIONS"
     },
     {
-      from: "Spencer Q3 Response",
+      from: "gk4SkKANLnQ",
       to: "2025-11-19T13:00:00Z",
       relationType: "SEEN_IN"
     }
