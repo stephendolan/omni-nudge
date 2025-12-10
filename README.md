@@ -9,12 +9,12 @@ Stop letting tasks rot in your inbox. OmniNudge uses AI to aggressively call out
 Traditional task managers are passive - they show you lists and hope you'll process them. OmniNudge is **active accountability**:
 
 1. Fetches your OmniFocus tasks (Inbox + Next perspective)
-2. Sends them to Claude Code with a [ruthless accountability prompt](agent-prompt.md)
+2. Sends them to Claude Code with a [ruthless enforcement agent](.claude/agents/task-enforcer.md)
 3. Claude analyzes task ages, patterns, and time pressure
 4. Delivers **specific** actions via notifications: "Delete the freezer organizer task" not "process your inbox"
 5. Uses Memory MCP to track patterns and escalate for repeat offenders
 
-The secret sauce is the **prompt** (see [agent-prompt.md](agent-prompt.md)). It's designed to be brutally honest, highly specific, and action-oriented.
+The secret sauce is the **agent prompt** (see [.claude/agents/task-enforcer.md](.claude/agents/task-enforcer.md)). It's designed to be brutally honest, highly specific, and action-oriented.
 
 ## Why This Works
 
@@ -87,13 +87,11 @@ export OMNI_NUDGE_SKIP_CONFIRMATION=true
 
 ### Adjust the Prompt
 
-The prompt is embedded in `omni-nudge.sh` starting around line 58. Edit it to:
+The agent prompt is in `.claude/agents/task-enforcer.md`. Edit it to:
 - Change the personality (though we recommend keeping it ruthless)
 - Adjust time pressure thresholds
 - Modify notification behavior
 - Add or remove task perspectives
-
-See [agent-prompt.md](agent-prompt.md) for the full prompt and design decisions.
 
 ### Change Allowed Tools
 

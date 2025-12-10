@@ -111,31 +111,33 @@ TASK_SNAPSHOT=$(cat <<EOF
 EOF
 )
 
-PROMPT_FILE="$SCRIPT_DIR/agent-prompt.md"
-if [ ! -f "$PROMPT_FILE" ]; then
-    log "ERROR: Prompt file not found at $PROMPT_FILE"
-    exit 1
-fi
-
 log "Invoking Claude..."
 
-CONTEXT="You are a ruthless task enforcer operating on this system.
-
+SNAPSHOT_PROMPT=$(cat <<EOF
 ## CURRENT OMNIFOCUS SNAPSHOT
 
 \`\`\`json
 $TASK_SNAPSHOT
 \`\`\`
 
-## YOUR INSTRUCTIONS
+Analyze this snapshot and then IMMEDIATELY call these two Bash commands:
 
-$(cat "$PROMPT_FILE")"
+1. say-logged "your ruthless message about their tasks"
+2. terminal-notifier -message "short aggressive message" -title "OmniNudge" -sound default
+
+Do not respond with text. Only call the Bash tool twice.
+EOF
+)
 
 STDERR_FILE="$SCRIPT_DIR/omni-nudge.error.log"
-claude -p "$CONTEXT" \
+AGENT_PROMPT="$SCRIPT_DIR/.claude/agents/task-enforcer.md"
+
+claude -p "$SNAPSHOT_PROMPT" \
+    --system-prompt "$AGENT_PROMPT" \
     --allowedTools "Bash(say-logged:*),Bash(date:*),Bash(of:*),Bash(terminal-notifier:*),mcp__memory" \
-    --output-format json \
+    --permission-mode dontAsk \
     --model opus \
+    --output-format json \
     --verbose 2> >(tee -a "$STDERR_FILE" >&2) | tee -a "$LOG_FILE"
 
 RESULT=$?
