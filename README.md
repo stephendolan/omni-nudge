@@ -49,7 +49,7 @@ crontab -e
 Add this line (every 30 minutes, 9am-4:30pm, Monday-Friday):
 
 ```bash
-0,30 9-16 * * 1-5 PATH=/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin OMNI_NUDGE_SKIP_CONFIRMATION=true /path/to/omni-nudge/omni-nudge.sh
+0,30 9-16 * * 1-5 PATH=/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin /path/to/omni-nudge/omni-nudge.sh
 ```
 
 **Important**:
