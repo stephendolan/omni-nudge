@@ -38,7 +38,7 @@ completed_at: <ISO timestamp?>
   "name": "gk4SkKANLnQ",
   "entityType": "task",
   "observations": [
-    "display_name: Spencer Q3 Response",
+    "display_name: Client Q3 Response",
     "lifecycle_state: active",
     "first_seen: 2025-11-14T14:35:00Z",
     "last_seen: 2025-11-19T13:00:00Z",
@@ -95,17 +95,17 @@ relationship_strength: <string>  # "critical" | "important" | "standard"
 task_count: <number>          # Active tasks mentioning this person
 ```
 
-**Naming convention:** Person's name as it appears in tasks (e.g., "Spencer")
+**Naming convention:** Person's name as it appears in tasks (e.g., "Alice")
 
 **Example:**
 ```json
 {
-  "name": "Spencer",
+  "name": "Alice",
   "entityType": "person",
   "observations": [
     "role: founder",
     "relationship_strength: critical",
-    "task_count: 3"
+    "task_count": 3"
   ]
 }
 ```
@@ -135,7 +135,7 @@ Links a task to its area/context.
 
 **Properties:** None
 
-**Example:** Task "Spencer Q3 Response" -[BELONGS_TO]-> Area "Founder Relations"
+**Example:** Task "Client Q3 Response" -[BELONGS_TO]-> Area "Founder Relations"
 
 ### Task → Person (MENTIONS)
 
@@ -146,7 +146,7 @@ Links a task to a person mentioned in it.
 urgency: <string>  # "high" | "medium" | "low"
 ```
 
-**Example:** Task "Spencer Q3 Response" -[MENTIONS]-> Person "Spencer"
+**Example:** Task "Client Q3 Response" -[MENTIONS]-> Person "Alice"
 
 ### Task → CheckIn (SEEN_IN)
 
@@ -157,7 +157,7 @@ Records that a task was observed in a specific check-in.
 state: <string>  # "inbox" | "flagged" | "active"
 ```
 
-**Example:** Task "Spencer Q3 Response" -[SEEN_IN]-> CheckIn "2025-11-19T13:00:00Z"
+**Example:** Task "Client Q3 Response" -[SEEN_IN]-> CheckIn "2025-11-19T13:00:00Z"
 
 ### Area → Task (CONTAINS)
 
@@ -208,7 +208,7 @@ Team:               Projects with team member names
 ### Person Role Classification
 
 ```
-founder:  Names in founders list (Spencer, etc.)
+founder:  Names in founders list
 team:     Tasks in team projects
 vendor:   Tasks with vendor company names
 customer: Tasks in customer projects
@@ -238,7 +238,7 @@ blocked:   Tasks exist but no progress, external dependency
 
 ### From Observation Strings
 
-Existing observations stored on "Stephen" entity should remain for historical reference. New check-ins create structured entities going forward.
+Existing observations stored on a user entity should remain for historical reference. New check-ins create structured entities going forward.
 
 **No migration of historical data required** - accept that past tracking was observation-based, future tracking is entity-based.
 
@@ -278,7 +278,7 @@ search_nodes({
 ### Get Tasks by Person
 
 ```javascript
-open_nodes(["Spencer"])
+open_nodes(["Alice"])
 // Get person entity, then traverse MENTIONS relations
 ```
 
@@ -315,7 +315,7 @@ create_entities({
     name: "gk4SkKANLnQ",
     entityType: "task",
     observations: [
-      "display_name: Spencer Q3 Response",
+      "display_name: Client Q3 Response",
       "lifecycle_state: active",
       "appearance_count: 8",
       "escalation_level: 3",
@@ -335,7 +335,7 @@ create_relations({
     },
     {
       from: "gk4SkKANLnQ",
-      to: "Spencer",
+      to: "Alice",
       relationType: "MENTIONS"
     },
     {

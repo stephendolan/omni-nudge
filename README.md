@@ -2,40 +2,35 @@
 
 **A ruthless task accountability system powered by Claude Code.**
 
-## The Core Idea
+Stop letting tasks rot in your inbox. OmniNudge uses AI to aggressively call out your procrastination with specific, actionable feedback delivered via system notifications and text-to-speech.
 
-Traditional task managers are passive - they show you lists and hope you'll process them. OmniNudge is **active accountability**:
+## How It Works
 
-1. Fetches your OmniFocus tasks (Inbox + Next perspective)
-2. Sends them to Claude Code with a [ruthless enforcement agent](.claude/agents/task-enforcer.md)
+1. Fetches OmniFocus tasks (Inbox + Next perspective)
+2. Sends snapshot to Claude Code with a [ruthless enforcement agent](.claude/agents/task-enforcer.md)
 3. Claude analyzes task ages, patterns, and time pressure
-4. Delivers **specific** actions via notifications: "Delete the freezer organizer task" not "process your inbox"
-5. Uses Memory MCP to track patterns and escalate for repeat offenders
+4. Delivers **specific** actions via notification and text-to-speech
 
-The secret sauce is the **agent prompt** (see [.claude/agents/task-enforcer.md](.claude/agents/task-enforcer.md)). It's designed to be brutally honest, highly specific, and action-oriented.
+The secret sauce is the **agent prompt** ([task-enforcer.md](.claude/agents/task-enforcer.md)) - brutally honest, highly specific, and action-oriented. It tells you "Delete the freezer organizer task" not "process your inbox".
 
-## Why This Works
-
-- **Specificity**: Tells you exactly which task to act on and what to do with it
-- **Escalation**: Notices when tasks keep appearing and gets more aggressive
-- **Time pressure**: Calculates hours until end of day and creates urgency
-- **Multi-modal**: Visual notifications + audio interruptions = harder to ignore
-- **Patterns**: Tracks task history to identify avoidance behaviors
+**Key features**: Specificity, escalation for repeat offenders, time pressure urgency, multi-modal delivery (visual + audio), pattern tracking via Memory MCP.
 
 ## Quick Start
 
 ### Prerequisites
 
 - macOS (for `osascript` notifications and `say` text-to-speech)
-- [OmniFocus CLI](https://github.com/derekkinsman/omnifocus-cli) installed (`of` command)
+- [OmniFocus CLI](https://github.com/derekkinsman/omnifocus-cli) (`of` command)
 - [Claude Code](https://code.claude.com) installed and authenticated (`claude` command)
+- `jq` for JSON processing: `brew install jq`
+- `terminal-notifier` for notifications: `brew install terminal-notifier`
 - Optional: [Memory MCP server](https://github.com/modelcontextprotocol/servers) for pattern tracking
 
 ### Installation
 
 ```bash
 # Clone the repo
-git clone https://github.com/yourusername/omni-nudge.git
+git clone https://github.com/stephendolan/omni-nudge.git
 cd omni-nudge
 
 # Make the script executable
@@ -47,23 +42,23 @@ chmod +x omni-nudge.sh
 
 ### Running Automatically
 
-The most common setup is to run this via cron during work hours:
+Run via cron during work hours. Edit your crontab:
 
 ```bash
-# Edit your crontab
 crontab -e
-
-# Add this line (adjust times for your schedule):
-# Every 30 minutes, 9am-4:30pm, Monday-Friday
-0,30 9-16 * * 1-5 /absolute/path/to/omni-nudge.sh
 ```
 
-**Important for cron**: If you're running via cron, you'll need to set environment variables:
+Add this line (every 30 minutes, 9am-4:30pm, Monday-Friday):
 
 ```bash
-# In your crontab, set PATH and optionally skip the confirmation dialog
-0,30 9-16 * * 1-5 PATH=/usr/local/bin:/usr/bin:/bin OMNI_NUDGE_SKIP_CONFIRMATION=true /path/to/omni-nudge.sh
+0,30 9-16 * * 1-5 PATH=/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin OMNI_NUDGE_SKIP_CONFIRMATION=true /path/to/omni-nudge/omni-nudge.sh
 ```
+
+**Important**:
+- Replace `/path/to/omni-nudge/omni-nudge.sh` with the absolute path to your script
+- Set `PATH` to include where `of`, `claude`, `jq`, and `terminal-notifier` are installed
+- Set `OMNI_NUDGE_SKIP_CONFIRMATION=true` to avoid dialog prompts in automated runs
+- Use `which of` and `which claude` to verify your PATH includes the correct directories
 
 ## Configuration
 
@@ -83,30 +78,14 @@ export OMNI_NUDGE_SKIP_CONFIRMATION=true
 
 ## Customization
 
-### Adjust the Prompt
+**Edit the agent prompt** (`.claude/agents/task-enforcer.md`) to adjust personality, time pressure thresholds, or notification behavior.
 
-The agent prompt is in `.claude/agents/task-enforcer.md`. Edit it to:
-- Change the personality (though we recommend keeping it ruthless)
-- Adjust time pressure thresholds
-- Modify notification behavior
-- Add or remove task perspectives
+**Change allowed tools** by modifying the `--allowedTools` parameter in `omni-nudge.sh`.
 
-### Change Allowed Tools
-
-The script restricts Claude to specific tools for safety. To modify:
-
+**Emergency stop** (e.g., you're on a call):
 ```bash
-# In omni-nudge.sh, find the --allowedTools parameter
---allowedTools "Bash(osascript:*),Bash(say:*),Bash(sleep:*),Bash(date:*),Bash(of:*),Bash(open:*),mcp__memory"
-```
-
-### Emergency Stop
-
-If you need to kill a running audit (e.g., you're on a call):
-
-```bash
-pkill -9 say                    # Kill text-to-speech
-pkill -f "omni-nudge"           # Kill the script
+pkill -9 say              # Kill text-to-speech
+pkill -f "omni-nudge"     # Kill the script
 ```
 
 ## Setup Memory MCP (Optional)
@@ -124,10 +103,21 @@ claude mcp list
 # Should show: memory...Connected
 ```
 
+## Improving Voice Quality
+
+macOS uses a default text-to-speech voice, but you can download higher-quality voices for better clarity:
+
+1. Open **System Settings > Accessibility > Spoken Content**
+2. Click **System Voice > Manage Voices...**
+3. Download **Samantha (Enhanced)** or other premium voices
+4. Select your preferred voice in the System Voice dropdown
+
+Enhanced voices sound significantly more natural and are easier to understand.
+
 ## Troubleshooting
 
 **No notifications appearing?**
-- Enable macOS notification permissions: System Settings > Notifications > Terminal (or Script Editor)
+- Enable macOS notification permissions: System Settings > Notifications > Terminal
 - For persistent notifications: Change "Banners" to "Alerts"
 
 **"of: command not found"**
@@ -136,51 +126,28 @@ claude mcp list
 **"claude: command not found"**
 - Install Claude Code: [code.claude.com](https://code.claude.com)
 
+**"terminal-notifier: command not found"**
+- Install via Homebrew: `brew install terminal-notifier`
+
 **Memory MCP not working?**
 - Verify: `claude mcp list` shows "memory...Connected"
 - Reinstall: `claude mcp add --transport stdio memory -- npx -y @modelcontextprotocol/server-memory`
 
 **Cron not running?**
-- Check cron logs: `grep CRON /var/log/system.log`
-- Ensure PATH includes `of` and `claude` commands
-- Check the log file: `tail -f omni-nudge.log`
+- Check the log file: `tail -f ~/Repos/omni-nudge/omni-nudge.log`
+- Verify PATH includes `of`, `claude`, `jq`, and `terminal-notifier`: Run `which of` and `which claude`
+- Test manually first: Run the script directly to ensure it works
 
 ## Adapting for Other Task Systems
 
-OmniNudge is built for OmniFocus, but the approach works with any task system that has a CLI:
+OmniNudge is built for OmniFocus, but works with any task system that has a CLI. Replace `of` commands with your task system's equivalent, adjust the prompt, and modify notification commands if not on macOS.
 
-1. Replace `of inbox list` with your task system's equivalent
-2. Replace `of perspective view "Next"` with your active tasks query
-3. Adjust the prompt to match your task structure
-4. Modify notification commands if not on macOS
-
-The core value is the **prompt** and **approach** - the specific implementation is just one example.
-
-## Philosophy
-
-This project is based on a few beliefs:
-
-1. **Specificity beats generality** - "Delete the freezer organizer" is more actionable than "process your inbox"
-2. **Accountability beats automation** - Sometimes you need someone (or something) to call you out
-3. **Interruption can be valuable** - A well-timed interruption prevents bigger problems
-4. **AI excels at pattern recognition** - Claude is great at spotting when you're avoiding something
-5. **Ruthless honesty works** - Gentle reminders get ignored; harsh truth gets action
+The core value is the **prompt** and **approach** - the implementation is adaptable.
 
 ## Contributing
 
-This is a simple shell script and a powerful prompt. Contributions welcome:
-
-- Adapters for other task systems (Things, Todoist, etc.)
-- Alternative prompts (less ruthless, more encouraging, etc.)
-- Notification improvements
-- Better cron management
+Contributions welcome: adapters for other task systems, alternative prompts, notification improvements.
 
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details.
-
-## Credits
-
-Created by someone who needed to stop letting tasks rot in their inbox.
-
-The real innovation here is the **prompt**, not the code. Feel free to adapt it for your own systems.
