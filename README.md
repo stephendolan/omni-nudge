@@ -2,8 +2,6 @@
 
 **A ruthless task accountability system powered by Claude Code.**
 
-Stop letting tasks rot in your inbox. OmniNudge uses AI to aggressively call out your procrastination with specific, actionable feedback delivered via system notifications and text-to-speech.
-
 ## How It Works
 
 1. Fetches OmniFocus tasks (Inbox + Next perspective)
